@@ -2,23 +2,36 @@ name: CI
 
 on:
   push:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
+
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   tests:
     runs-on: ubuntu-latest
 
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+
     services:
       postgres:
         image: postgres:15
+
         env:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: banking
+
         ports:
           - 5432:5432
+
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -26,70 +39,56 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+          cache: pip
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install dbt-snowflake
+          pip install ruff pytest
 
       - name: Run linters
-        run: |
-          pip install ruff
-          ruff check .
+        run: ruff check .
 
       - name: Run unit tests
         run: |
-          pip install pytest
-          pytest tests/ || echo "No tests yet"
+          if [ -d "tests" ]; then
+            pytest tests
+          else
+            echo "No tests directory exists yet."
+          fi
 
       - name: Create dbt profile
-  env:
-    SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-    SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-    SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-    SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-
-  run: |
-    mkdir -p ~/.dbt
-
-    cat > ~/.dbt/profiles.yml <<'EOF'
-    fininfra_dbt:
-      target: dev
-
-      outputs:
-        dev:
-          type: snowflake
-          account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
-          user: "{{ env_var('SNOWFLAKE_USER') }}"
-          password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
-          role: ACCOUNTADMIN
-          database: BANKING
-          warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE') }}"
-          schema: ANALYTICS
-          threads: 4
-    EOF
-
-    - name: Validate dbt project
-  working-directory: fininfra_dbt
-  env:
-    SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-    SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-    SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-    SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-
-  run: |
-    dbt debug
-    dbt compile
-
-      - name: dbt compile (validation)
         run: |
-          cd fininfra_dbt
+          mkdir -p ~/.dbt
+
+          cat > ~/.dbt/profiles.yml <<'EOF'
+          fininfra_dbt:
+            target: dev
+
+            outputs:
+              dev:
+                type: snowflake
+                account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+                user: "{{ env_var('SNOWFLAKE_USER') }}"
+                password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+                role: ACCOUNTADMIN
+                database: BANKING
+                warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE') }}"
+                schema: ANALYTICS
+                threads: 4
+          EOF
+
+      - name: Validate dbt project
+        working-directory: fininfra_dbt
+        run: |
           dbt deps
+          dbt debug
           dbt compile
