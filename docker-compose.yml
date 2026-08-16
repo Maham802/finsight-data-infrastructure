@@ -20,7 +20,7 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://host.docker.internal:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://127.0.0.1:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -77,7 +77,7 @@ services:
   airflow-webserver:
     build:
       context: .
-      dockerfile: dockerfile-airflow.dockerfile
+      dockerfile: docker-airflow.dockerfile
     container_name: airflow-webserver
     restart: always
     depends_on:
@@ -99,7 +99,7 @@ services:
   airflow-scheduler:
     build:
       context: .
-      dockerfile: dockerfile-airflow.dockerfile
+      dockerfile: docker-airflow.dockerfile
     container_name: airflow-scheduler
     restart: always
     depends_on:

@@ -1,7 +1,46 @@
+
+# Github Actions Cache
+/.github/.cache
+
+# Docker cache
+docker/logs/
+docker/minio/
+docker/plugins/
+docker/postgres/
+
+# DBT cache
+fininfra_dbt/.dbt/
+fininfra_dbt/analyses/
+fininfra_dbt/logs/
+fininfra_dbt/macros/
+fininfra_dbt/seeds
+fininfra_dbt/target/
+fininfra_dbt/tests/
+
+.env
+.env
+.env.*
+!.env.example
+.venv/
+
+
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+.DS_Store
+docker-compose.override.yml
+logs/
+
+
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
+
 
 # C extensions
 *.so
