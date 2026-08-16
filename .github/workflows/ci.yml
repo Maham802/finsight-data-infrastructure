@@ -69,6 +69,6 @@ jobs:
 
       - name: dbt compile (validation)
         run: |
-          cd fininfra_dbt_dbt
+          cd fininfra_dbt
           dbt deps
           dbt compile
