@@ -3,12 +3,11 @@ import os
 import random
 import sys
 import time
-from decimal import Decimal, ROUND_DOWN
+from decimal import ROUND_DOWN, Decimal
 
 import psycopg2
 from dotenv import load_dotenv
 from faker import Faker
-
 
 # ---------------------------------
 # Load environment variables
@@ -294,7 +293,7 @@ def main():
     except KeyboardInterrupt:
         print("\nInterrupted by the user. Exiting gracefully...")
 
-    except Exception as error:
+    except Exception as error: # noqa: BLE001
         print(f"\nThe data generator failed: {error}")
         sys.exit(1)
 

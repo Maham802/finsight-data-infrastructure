@@ -1,10 +1,11 @@
-import boto3
-from kafka import KafkaConsumer
 import json
-import pandas as pd
-from datetime import datetime
 import os
+from datetime import UTC, datetime
+
+import boto3
+import pandas as pd
 from dotenv import load_dotenv
+from kafka import KafkaConsumer
 
 # -----------------------------
 # Load secrets from .env
@@ -41,14 +42,24 @@ if bucket not in [b['Name'] for b in s3.list_buckets()['Buckets']]:
 def write_to_minio(table_name, records):
     if not records:
         return
+
     df = pd.DataFrame(records)
-    date_str = datetime.now().strftime('%Y-%m-%d')
-    file_path = f'{table_name}_{date_str}.parquet'
-    df.to_parquet(file_path, engine='fastparquet', index=False)
-    s3_key = f'{table_name}/date={date_str}/{table_name}_{datetime.now().strftime("%H%M%S%f")}.parquet'
+
+    current_time = datetime.now(UTC)
+    date_str = current_time.strftime("%Y-%m-%d")
+
+    file_path = f"{table_name}_{date_str}.parquet"
+    df.to_parquet(file_path, engine="fastparquet", index=False)
+
+    s3_key = (
+        f"{table_name}/date={date_str}/"
+        f"{table_name}_{current_time.strftime('%H%M%S%f')}.parquet"
+    )
+
     s3.upload_file(file_path, bucket, s3_key)
     os.remove(file_path)
-    print(f'✅ Uploaded {len(records)} records to s3://{bucket}/{s3_key}')
+
+    print(f"✅ Uploaded {len(records)} records to s3://{bucket}/{s3_key}")
 
 # Batch consume
 batch_size = 1
